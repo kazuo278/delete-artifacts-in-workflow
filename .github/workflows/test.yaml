@@ -1,0 +1,54 @@
+name: "upload-download"
+on:
+  workflow_dispatch:
+permissions: read-all
+jobs:
+  upload:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: create test file
+        run: |-
+          RANDOM_STRING=$(openssl rand -base64 9 | head -c 10)
+          echo $RANDOM_STRING
+          mkdir -p target/sub-dir
+          echo "$RANDOM_STRING" >> target/main.txt
+          echo "$RANDOM_STRING" >> target/sub-dir/sub.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: target/
+  download:
+    runs-on: ubuntu-20.04
+    needs: ["upload"]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: my-artifact
+          path: target/
+        continue-on-error: true
+      - name: show currnet directory
+        if: ${{ success() || failure() }}
+        run: |-
+          ls -R
+      - name: show target/main.txt
+        run: |-
+          cat target/main.txt
+      - name: show GITHUB_RUN_ID
+        run: |-
+          echo "$GITHUB_RUN_ID"
+  delete:
+    runs-on: ubuntu-20.04
+    needs: ["download"]
+    steps:
+      - name: show GITHUB_RUN_ID
+        run: |-
+          echo "$GITHUB_RUN_ID"
+      - name: delete artifact
+        run: |-
+          echo "$GITHUB_RUN_ID"
+          TARGET_ID=$(curl -fsSL \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts)
+          echo "$TARGET_ID"

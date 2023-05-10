@@ -1,0 +1,18 @@
+name: "upload"
+on:
+  workflow_dispatch:
+jobs:
+  upload:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: create test file
+        run: |-
+          RANDOM_STRING=$(openssl rand -base64 9 | head -c 10)
+          echo $RANDOM_STRING
+          mkdir -p target/sub-dir
+          echo "$RANDOM_STRING" >> target/main.txt
+          echo "$RANDOM_STRING" >> target/sub-dir/sub.txt
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: target/
